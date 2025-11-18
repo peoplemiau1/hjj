@@ -2,230 +2,471 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Выживание в Дятлово</title>
-    <!-- Подключение Tailwind CSS для стилизации -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CONNECTION LOST</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: #000;
-        }
-        .chat-bubble {
-            max-width: 80%;
-            padding: 10px 15px;
-            border-radius: 20px;
-            line-height: 1.4;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-        }
-        .bot-message-wrapper { display: flex; align-items: flex-end; gap: 8px; align-self: flex-start; }
-        .bot-message { background-color: #262626; color: white; border-bottom-left-radius: 5px; }
-        .user-message-wrapper { display: flex; justify-content: flex-end; align-items: flex-end; gap: 8px; align-self: flex-end; }
-        .user-message { background-color: #4b5563; color: white; border-bottom-right-radius: 5px; }
-        .avatar { width: 40px; height: 40px; border-radius: 9999px; object-fit: cover; }
-        
-        #action-btn {
-            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
-            transform: scale(0.8); opacity: 0; pointer-events: none;
-        }
-        #action-btn.visible { transform: scale(1); opacity: 1; pointer-events: auto; }
+        @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap');
 
-        #ai-selector {
-            background-color: #2a2a2a; color: white; border: 1px solid #444;
-            border-radius: 8px; padding: 4px 8px; cursor: pointer;
-            -webkit-appearance: none; -moz-appearance: none; appearance: none;
+        body {
+            background-color: #050505;
+            margin: 0;
+            height: 100vh;
+            font-family: 'Roboto Mono', monospace;
+            color: #e0e0e0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
+
+        #ui-layer {
+            width: 100%;
+            max-width: 420px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            background: #0a0a0a;
+            border-left: 1px solid #222;
+            border-right: 1px solid #222;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }
+
+        header {
+            padding: 15px;
+            background: #111;
+            border-bottom: 1px solid #333;
+            text-align: center;
+            font-weight: 700;
+            color: #b00;
+            letter-spacing: 1px;
+            z-index: 2;
+        }
+
+        #chat-area {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            scroll-behavior: smooth;
+            position: relative;
+        }
+
+        .msg {
+            max-width: 80%;
+            padding: 10px 14px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            border-radius: 6px;
+            opacity: 0;
+            transform: translateY(10px);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        @keyframes popIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .msg.them {
+            align-self: flex-start;
+            background: #1a1a1a;
+            border-left: 3px solid #444;
+            color: #ccc;
+        }
+
+        .msg.me {
+            align-self: flex-end;
+            background: #2e0000;
+            border-right: 3px solid #800;
+            color: #ffcdcd;
+        }
+
+        .msg.system {
+            align-self: center;
+            background: transparent;
+            color: #555;
+            font-size: 0.75rem;
+            border: none;
+            text-align: center;
+            font-style: italic;
+        }
+
+        .typing-indicator {
+            padding: 0 20px;
+            height: 20px;
+            font-size: 0.7rem;
+            color: #666;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+
+        #controls {
+            padding: 15px;
+            background: #0f0f0f;
+            border-top: 1px solid #222;
+            display: flex;
+            gap: 10px;
+        }
+
+        input {
+            flex: 1;
+            background: #000;
+            border: 1px solid #333;
+            padding: 10px;
+            color: #fff;
+            font-family: inherit;
+            outline: none;
+        }
+
+        #start-screen {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: #000;
+            z-index: 999;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        button {
+            padding: 15px 40px;
+            background: #800;
+            color: #fff;
+            border: none;
+            font-family: inherit;
+            font-size: 1.2rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            background: #f00;
+            box-shadow: 0 0 20px #f00;
+        }
+
+        #jumpscare-layer {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: black;
+            z-index: 9999;
+            overflow: hidden;
+        }
+
+        #scare-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            content: url('https://upload.wikimedia.org/wikipedia/commons/8/87/J-horrror_face.jpg');
+        }
+
+        .glitch-anim {
+            animation: glitch 0.15s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0) scale(1); filter: hue-rotate(0deg); }
+            20% { transform: translate(-5px, 5px) scale(1.1); filter: invert(1); }
+            40% { transform: translate(5px, -5px) scale(1.2); filter: contrast(2); }
+            60% { transform: translate(-5px, -5px) scale(1.1); background: red; }
+            80% { transform: translate(5px, 5px) scale(1.2); filter: hue-rotate(90deg); }
+            100% { transform: translate(0) scale(1); }
+        }
+
+        .img-loader {
+            width: 200px;
+            height: 150px;
+            background: #000;
+            border: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #555;
+        }
+        
+        .spinner {
+            width: 20px; height: 20px;
+            border: 2px solid #333;
+            border-top-color: #800;
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+            margin-bottom: 10px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
     </style>
 </head>
 <body>
 
-    <div class="mx-auto flex flex-col h-screen" style="max-width: 450px; background-image: url('https://images.pexels.com/photos/2079667/pexels-photo-2079667.jpeg'); background-size: cover; background-position: center;">
+    <div id="jumpscare-layer">
+        <img id="scare-img" alt="">
+    </div>
 
-        <!-- 1. Верхняя панель (Header) -->
-        <header class="flex items-center justify-between p-3 bg-[#1e1e1e] text-white bg-opacity-80 backdrop-blur-sm flex-shrink-0">
-            <div class="flex items-center space-x-3">
-                <img id="header-avatar" src="" alt="Аватар ИИ" class="w-8 h-8 rounded-full">
-                <span id="header-name" class="font-semibold text-lg"></span>
-            </div>
-            <div class="flex items-center space-x-4">
-                <select id="ai-selector"></select>
-            </div>
-        </header>
+    <div id="start-screen">
+        <p style="color: #444; margin-bottom: 20px;">SOUND REQUIRED</p>
+        <button id="btn-init">CONNECT</button>
+    </div>
 
-        <!-- 2. Основная часть (Контейнер для сообщений) -->
-        <main id="chat-container" class="flex-grow flex flex-col p-4 space-y-4 overflow-y-auto"></main>
-
-        <!-- 3. Нижняя панель (Форма для отправки сообщения) -->
-        <footer class="bg-black bg-opacity-80 backdrop-blur-sm p-3">
-             <form id="message-form" class="flex items-center space-x-2 pt-1">
-                <div class="relative flex-grow">
-                    <input type="text" id="message-input" placeholder="Написать сообщение..." class="w-full bg-[#2a2a2a] text-white rounded-full py-2 px-4 focus:outline-none" />
-                </div>
-                <button type="submit" id="action-btn" class="text-white bg-blue-800 rounded-full p-2">
-                     <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M12 5l7 7-7 7" /></svg>
-                </button>
-            </form>
-        </footer>
+    <div id="ui-layer">
+        <header>ALEX (OFFLINE)</header>
+        <div id="chat-area"></div>
+        <div class="typing-indicator" id="typing"></div>
+        <div id="controls">
+            <input type="text" disabled placeholder="Connection unstable...">
+        </div>
     </div>
 
     <script>
-        // --- КОНФИГУРАЦИЯ ИИ-ПЕРСОНАЖЕЙ ---
-        const AI_AGENTS = {
-            'survivor': {
-                name: "Лена?",
-                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-                model: "openrouter/polaris-alpha",
-                avatar: "https://placehold.co/40x40/4b5563/FFF?text=Л",
-                system_prompt: "Ты — Лена, подруга игрока. Вы вместе приехали в село Дятлово. Ночью на вас напали монстры. Ты смогла убежать и спряталась в подвале старого дома. Ты очень напугана, замерзла, и пишешь игроку в надежде, что он жив. Твои сообщения должны быть короткими, паническими. Спрашивай, где он, слышит ли он крики, и описывай звуки, которые слышишь ты (скрежет наверху, шаги). Твоя цель — найти игрока и выжить."
-            },
-            'monster': {
-                name: "???",
-                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-                model: "openrouter/polaris-alpha",
-                avatar: "https://placehold.co/40x40/7f1d1d/FFF?text=...",
-                system_prompt: "Ты — древнее чудовище, обитающее в селе Дятлово. Ты — сама суть этого проклятого места. Ты можешь проникать в радиочастоты и чужие мысли. Ты перехватил сигнал телефона игрока. Твоя цель — играть с ним, мучить его, сводить с ума, прежде чем найти и поглотить. Говори короткими, сломанными фразами. Используй шепот, намеки. Дай понять, что ты всё видишь и слышишь. Например: 'Холодно... в сарае?', 'Слышу... как бьется... сердце...', 'Твои друзья... вкусные...'."
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
             }
-        };
 
-        const USER_AVATAR_URL = "https://placehold.co/40x40/10B981/FFF?text=Я";
-        
-        let currentAgentId = 'survivor';
-        let conversationHistories = {};
-
-        const chatContainer = document.getElementById('chat-container');
-        const messageForm = document.getElementById('message-form');
-        const messageInput = document.getElementById('message-input');
-        const actionBtn = document.getElementById('action-btn');
-        const aiSelector = document.getElementById('ai-selector');
-
-        function initializeApp() {
-            Object.keys(AI_AGENTS).forEach(agentId => {
-                const agent = AI_AGENTS[agentId];
-                const option = document.createElement('option');
-                option.value = agentId;
-                option.textContent = agent.name;
-                aiSelector.appendChild(option);
-                conversationHistories[agentId] = [{ role: 'system', content: agent.system_prompt }];
-            });
-            
-            const firstMessageSurvivor = "Ты жив?! Слава богу! Где ты?! Я спряталась в каком-то подвале, тут так темно... Я слышу их, они ходят где-то наверху...";
-            conversationHistories['survivor'].push({ role: 'assistant', content: firstMessageSurvivor });
-            
-            const firstMessageMonster = "...нашел...";
-            conversationHistories['monster'].push({ role: 'assistant', content: firstMessageMonster });
-
-            aiSelector.addEventListener('change', (e) => switchAgent(e.target.value));
-            
-            switchAgent(currentAgentId);
-        }
-
-        function switchAgent(agentId) {
-            currentAgentId = agentId;
-            const agent = AI_AGENTS[agentId];
-
-            document.getElementById('header-avatar').src = agent.avatar;
-            document.getElementById('header-name').textContent = agent.name;
-            
-            chatContainer.innerHTML = '';
-            
-            conversationHistories[agentId].forEach(msg => {
-                if (msg.role === 'user') {
-                    addUserMessage(msg.content, false);
-                } else if (msg.role === 'assistant') {
-                    addBotMessage(msg.content, false);
+            init() {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                this.ctx = new AudioContext();
+                if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
                 }
-            });
-            scrollToBottom();
-        }
-
-        messageForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            const messageText = messageInput.value.trim();
-            if (!messageText) return;
-
-            addUserMessage(messageText);
-            conversationHistories[currentAgentId].push({ role: 'user', content: messageText });
-            
-            messageInput.value = '';
-            actionBtn.classList.remove('visible');
-            
-            showTypingIndicator();
-
-            try {
-                const aiResponse = await getAIResponse();
-                hideTypingIndicator();
-                addBotMessage(aiResponse);
-                conversationHistories[currentAgentId].push({ role: 'assistant', content: aiResponse });
-            } catch (error) {
-                console.error("Ошибка API:", error);
-                hideTypingIndicator();
-                addBotMessage("...помехи... ничего не слышно...", true);
-            }
-        });
-
-        async function getAIResponse() {
-            // !!! ВАЖНО: Никогда не храните ключ API в клиентском коде для реальных проектов!
-            const apiKey = "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";
-            const apiUrl = "https://openrouter.ai/api/v1/chat/completions";
-
-            const response = await fetch(apiUrl, {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    "model": AI_AGENTS[currentAgentId].model,
-                    "messages": conversationHistories[currentAgentId]
-                })
-            });
-
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(`Ошибка API: ${response.status} - ${errorData.error ? errorData.error.message : 'Unknown error'}`);
+                this.playSilent();
             }
 
-            const data = await response.json();
-            return data.choices[0].message.content;
+            playSilent() {
+                const osc = this.ctx.createOscillator();
+                osc.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.001);
+            }
+
+            playBeep(type) {
+                if (!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                if (type === 'receive') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(600, t);
+                    osc.frequency.exponentialRampToValueAtTime(300, t + 0.1);
+                    gain.gain.setValueAtTime(0.1, t);
+                    gain.gain.linearRampToValueAtTime(0, t + 0.1);
+                    osc.start();
+                    osc.stop(t + 0.15);
+                } else if (type === 'send') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(200, t);
+                    gain.gain.setValueAtTime(0.05, t);
+                    gain.gain.linearRampToValueAtTime(0, t + 0.1);
+                    osc.start();
+                    osc.stop(t + 0.1);
+                }
+            }
+
+            playScream() {
+                if (!this.ctx) return;
+                const t = this.ctx.currentTime;
+                const masterGain = this.ctx.createGain();
+                masterGain.connect(this.ctx.destination);
+                masterGain.gain.setValueAtTime(1.0, t);
+
+                const osc1 = this.ctx.createOscillator();
+                osc1.type = 'sawtooth';
+                osc1.frequency.setValueAtTime(100, t);
+                osc1.frequency.exponentialRampToValueAtTime(2000, t + 1);
+                
+                const osc2 = this.ctx.createOscillator();
+                osc2.type = 'square';
+                osc2.frequency.setValueAtTime(150, t);
+                osc2.frequency.exponentialRampToValueAtTime(1800, t + 1);
+
+                const lfo = this.ctx.createOscillator();
+                lfo.type = 'sawtooth';
+                lfo.frequency.value = 15; 
+                const lfoGain = this.ctx.createGain();
+                lfoGain.gain.value = 500;
+                lfo.connect(lfoGain);
+                lfoGain.connect(osc1.frequency);
+
+                osc1.connect(masterGain);
+                osc2.connect(masterGain);
+
+                osc1.start();
+                osc2.start();
+                osc1.stop(t + 2);
+                osc2.stop(t + 2);
+            }
         }
 
-        messageInput.addEventListener('input', () => {
-            actionBtn.classList.toggle('visible', messageInput.value.trim() !== '');
+        class ChatUI {
+            constructor() {
+                this.chatArea = document.getElementById('chat-area');
+                this.typing = document.getElementById('typing');
+                this.scareLayer = document.getElementById('jumpscare-layer');
+                this.header = document.querySelector('header');
+            }
+
+            addMessage(text, sender) {
+                const div = document.createElement('div');
+                div.classList.add('msg', sender);
+                
+                if (sender === 'image') {
+                    div.classList.add('them');
+                    div.innerHTML = `
+                        <div class="img-loader">
+                            <div class="spinner"></div>
+                            <span>IMG_ERROR_CORRUPTED</span>
+                        </div>
+                    `;
+                } else {
+                    div.textContent = text;
+                }
+                
+                this.chatArea.appendChild(div);
+                this.scrollToBottom();
+            }
+
+            setTyping(isTyping) {
+                this.typing.textContent = isTyping ? "Alex печатает..." : "";
+                if (isTyping) this.scrollToBottom();
+            }
+
+            scrollToBottom() {
+                this.chatArea.scrollTop = this.chatArea.scrollHeight;
+            }
+
+            triggerScare() {
+                this.scareLayer.style.display = 'block';
+                this.scareLayer.classList.add('glitch-anim');
+                if (navigator.vibrate) navigator.vibrate([200, 50, 200, 50, 500, 100, 1000]);
+                
+                setTimeout(() => {
+                    document.body.innerHTML = '';
+                    document.body.style.backgroundColor = 'black';
+                }, 2500);
+            }
+
+            changeHeader(text) {
+                this.header.textContent = text;
+                this.header.style.color = 'red';
+            }
+        }
+
+        class StoryEngine {
+            constructor(sound, ui) {
+                this.sound = sound;
+                this.ui = ui;
+                this.step = 0;
+                this.story = [
+                    { t: "Ты здесь?", s: 'them', d: 1000 },
+                    { t: "Да, что случилось?", s: 'me', d: 2000 },
+                    { t: "Я зашел в тот дом. Миллеров.", s: 'them', d: 2000 },
+                    { t: "Ты идиот? Там охрана.", s: 'me', d: 2500 },
+                    { t: "Нет никого. Дверь была открыта.", s: 'them', d: 2000 },
+                    { t: "Здесь холодно. Очень.", s: 'them', d: 2000 },
+                    { t: "Уходи оттуда, Алекс.", s: 'me', d: 2000 },
+                    { t: "Подожди... Я слышу что-то.", s: 'them', d: 3000 },
+                    { t: "На втором этаже.", s: 'them', d: 2000 },
+                    { t: "Алекс?", s: 'me', d: 4000 },
+                    { t: "Я нашел телефон. На полу.", s: 'them', d: 2000 },
+                    { t: "Он звонит.", s: 'them', d: 1500 },
+                    { t: "Не трогай его!", s: 'me', d: 2000 },
+                    { t: "Я ответил. Там тишина.", s: 'them', d: 3000 },
+                    { t: "Нет... не тишина. Дыхание.", s: 'them', d: 2000 },
+                    { t: "Беги оттуда!", s: 'me', d: 1500 },
+                    { t: "Связь плохая. Скину фото.", s: 'them', d: 2000 },
+                    { t: "", s: 'image', d: 2000 },
+                    { t: "Что это за черное пятно?", s: 'me', d: 3000 },
+                    { t: "Я не фоткал пятно. Я фоткал коридор.", s: 'them', d: 2500 },
+                    { t: "Оно в углу. Ты видишь?", s: 'them', d: 2000 },
+                    { t: "Глаза.", s: 'them', d: 1500 },
+                    { t: "Я ничего не вижу, уходи!", s: 'me', d: 2000 },
+                    { t: "Оно видело меня.", s: 'them', d: 2000 },
+                    { t: "Оно идет сюда.", s: 'them', d: 1500 },
+                    { t: "Я спрятался в шкафу.", s: 'them', d: 2000 },
+                    { t: "Слышу шаги. Тяжелые.", s: 'them', d: 3000 },
+                    { t: "ШАГИ ОСТАНОВИЛИСЬ ПРЯМО У ДВЕРИ.", s: 'them', d: 3000 },
+                    { t: "Я держу ручку. Оно пытается открыть.", s: 'them', d: 3000 },
+                    { t: "Помоги мне.", s: 'them', d: 2000 },
+                    { t: "Боже, оно скребется.", s: 'them', d: 2000 },
+                    { t: "Алекс, я вызвал полицию!", s: 'me', d: 2000 },
+                    { t: "Оно затихло.", s: 'them', d: 4000 },
+                    { t: "Ты уверен?", s: 'me', d: 3000 },
+                    { t: "Да. Ушло.", s: 'them', d: 2000 },
+                    { t: "Я выхожу.", s: 'them', d: 2000 },
+                    { t: "Стой, не выходи!", s: 'me', d: 1500 },
+                    { t: "Всё нормально. Я вижу выход.", s: 'them', d: 2500 },
+                    { t: "Подожди... почему дверь открылась сама?", s: 'them', d: 3000 },
+                    { t: "Оно не ушло.", s: 'them', d: 2000 },
+                    { t: "ОНО НА ПОТОЛКЕ.", s: 'them', d: 1000 },
+                    { t: "НЕ СМОТРИ НА ЭКРАН", s: 'them', d: 2000 },
+                    { t: "БЛИЖЕ", s: 'them', d: 1000 },
+                    { t: "LOOK AT ME", s: 'them', d: 1000, action: 'scare' }
+                ];
+            }
+
+            start() {
+                this.processStep();
+            }
+
+            processStep() {
+                if (this.step >= this.story.length) return;
+                
+                const item = this.story[this.step];
+                const isThem = item.s === 'them' || item.s === 'image';
+                
+                if (isThem) this.ui.setTyping(true);
+
+                setTimeout(() => {
+                    if (isThem) this.ui.setTyping(false);
+
+                    if (item.action === 'scare') {
+                        this.sound.playScream();
+                        this.ui.triggerScare();
+                        return;
+                    }
+
+                    this.ui.addMessage(item.t, item.s);
+                    
+                    if (item.s === 'them' || item.s === 'image') {
+                        this.sound.playBeep('receive');
+                    } else if (item.s === 'me') {
+                        this.sound.playBeep('send');
+                    }
+
+                    if (this.step === 38) { 
+                        this.ui.changeHeader("ALEX (DEAD)");
+                    }
+
+                    this.step++;
+                    this.processStep();
+
+                }, item.d);
+            }
+        }
+
+        const startBtn = document.getElementById('btn-init');
+        const startScreen = document.getElementById('start-screen');
+
+        startBtn.addEventListener('click', () => {
+            const sound = new SoundEngine();
+            sound.init();
+            
+            const ui = new ChatUI();
+            const story = new StoryEngine(sound, ui);
+            
+            startScreen.style.display = 'none';
+            story.start();
         });
 
-        function scrollToBottom() {
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        function addUserMessage(text, doScroll = true) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'user-message-wrapper';
-            wrapper.innerHTML = `<div class="chat-bubble user-message">${text}</div><img src="${USER_AVATAR_URL}" alt="Аватар игрока" class="avatar flex-shrink-0">`;
-            chatContainer.appendChild(wrapper);
-            if (doScroll) scrollToBottom();
-        }
-
-        function addBotMessage(text, doScroll = true) {
-            const wrapper = document.createElement('div');
-            wrapper.className = 'bot-message-wrapper';
-            wrapper.innerHTML = `<img src="${AI_AGENTS[currentAgentId].avatar}" alt="Аватар ИИ" class="avatar flex-shrink-0"><div class="chat-bubble bot-message">${text}</div>`;
-            chatContainer.appendChild(wrapper);
-            if (doScroll) scrollToBottom();
-        }
-
-        function showTypingIndicator() {
-            const indicator = document.createElement('div');
-            indicator.id = 'typing-indicator';
-            indicator.className = 'bot-message-wrapper';
-            indicator.innerHTML = `<img src="${AI_AGENTS[currentAgentId].avatar}" alt="Аватар ИИ" class="avatar flex-shrink-0"><div class="chat-bubble bot-message">...</div>`;
-            chatContainer.appendChild(indicator);
-            scrollToBottom();
-        }
-
-        function hideTypingIndicator() {
-            document.getElementById('typing-indicator')?.remove();
-        }
-        
-        initializeApp();
     </script>
-
 </body>
 </html>
