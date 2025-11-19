@@ -1,627 +1,417 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SESSION_ID: 666_FATAL_ERROR</title>
-    <style>
-        /* --- НАСТРОЙКИ ИНТЕРФЕЙСА --- */
-        :root {
-            --bg-color: #080808;
-            --term-green: #4af626;
-            --term-dim: #1f5a14;
-            --term-red: #ff0000;
-            --font-main: 'Courier New', monospace;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>DeadChannel_v2</title>
+<style>
+    :root {
+        --bg-primary: #0e1621;
+        --bg-header: #17212b;
+        --msg-in: #182533;
+        --msg-out: #2b5278;
+        --text-main: #f5f5f5;
+        --text-sub: #6c7883;
+        --accent: #64b5ef;
+        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
 
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            background-color: var(--bg-color);
-            font-family: var(--font-main);
-            color: var(--term-green);
-            overflow: hidden; /* Блокируем прокрутку страницы, только чат */
-            user-select: none;
-        }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* Эффект старого монитора (Scanlines) */
-        #crt-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: repeating-linear-gradient(
-                0deg,
-                rgba(0, 0, 0, 0.15),
-                rgba(0, 0, 0, 0.15) 1px,
-                transparent 1px,
-                transparent 2px
-            );
-            pointer-events: none;
-            z-index: 100;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
-        }
+    body {
+        background-color: var(--bg-primary);
+        color: var(--text-main);
+        font-family: var(--font);
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        cursor: default;
+    }
 
-        /* --- КОНТЕЙНЕРЫ --- */
-        #app-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            max-width: 900px;
-            margin: 0 auto;
-            position: relative;
-            z-index: 10;
-            padding: 20px;
-            box-sizing: border-box;
-        }
+    .overlay-layer {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100;
+        display: none;
+    }
 
-        /* Окно чата */
-        #terminal-output {
-            flex-grow: 1;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end; /* Сообщения прижимаются к низу */
-            padding-bottom: 20px;
-            scrollbar-width: none; /* Скрыть скроллбар */
-        }
+    #glitch-fx {
+        background: rgba(255, 0, 0, 0.1);
+        mix-blend-mode: exclusion;
+    }
 
-        /* Поле выбора ответов */
-        #input-area {
-            min-height: 80px;
-            border-top: 2px solid var(--term-dim);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            padding-top: 15px;
-        }
+    #whiteout-fx {
+        background: #fff;
+        z-index: 200;
+        opacity: 0;
+        transition: opacity 4s ease-in;
+        display: block;
+        pointer-events: none;
+    }
 
-        /* --- СТИЛИ СООБЩЕНИЙ --- */
-        .msg {
-            margin-bottom: 15px; /* ПРОБЕЛЫ МЕЖДУ СТРОКАМИ */
-            line-height: 1.5;
-            font-size: 1.1rem;
-            opacity: 0;
-            animation: fadeIn 0.3s forwards;
-            max-width: 90%;
-        }
+    #screamer-fx {
+        background: #000;
+        z-index: 150;
+        display: none;
+        align-items: center; justify-content: center;
+    }
+    
+    .screamer-content { font-size: 8rem; animation: shake 0.1s infinite; }
 
-        /* Стили для разных отправителей */
-        .msg.system {
-            color: #555;
-            font-size: 0.9rem;
-            font-style: italic;
-            border-left: 2px solid #333;
-            padding-left: 10px;
-        }
+    header {
+        background: var(--bg-header);
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        z-index: 10;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    }
 
-        .msg.host {
-            color: var(--term-green);
-            text-shadow: 0 0 5px var(--term-dim);
-        }
-        
-        .msg.host::before {
-            content: "> ";
-            color: var(--term-dim);
-        }
+    .avatar-group {
+        width: 42px; height: 42px;
+        background: linear-gradient(135deg, #444, #222);
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; margin-right: 12px;
+        position: relative;
+    }
 
-        .msg.entity {
-            color: var(--term-red);
-            text-shadow: 0 0 8px red;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
+    .avatar-group::after {
+        content: ''; position: absolute; bottom: 0; right: 0;
+        width: 10px; height: 10px; background: #f55;
+        border: 2px solid var(--bg-header); border-radius: 50%;
+    }
 
-        .msg.user {
-            align-self: flex-end;
-            color: #ccc;
-            text-align: right;
-            border-right: 2px solid #ccc;
-            padding-right: 10px;
-        }
+    .meta h3 { font-size: 16px; font-weight: 600; }
+    .meta p { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
 
-        /* --- КНОПКИ --- */
-        button {
-            background: black;
-            border: 1px solid var(--term-green);
-            color: var(--term-green);
-            padding: 10px 20px;
-            font-family: var(--font-main);
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.2s all;
-            text-transform: uppercase;
-        }
+    #viewport {
+        flex: 1;
+        overflow-y: auto;
+        padding: 15px;
+        background: url('https://web.telegram.org/img/bg_0.png');
+        background-blend-mode: multiply;
+        background-color: var(--bg-primary);
+        display: flex; flex-direction: column; gap: 6px;
+    }
 
-        button:hover {
-            background: var(--term-green);
-            color: black;
-            box-shadow: 0 0 15px var(--term-green);
-        }
+    .msg-row { display: flex; width: 100%; animation: fade 0.2s ease; }
+    .msg-row.me { justify-content: flex-end; }
+    
+    .msg-bubble {
+        max-width: 75%; padding: 6px 10px;
+        border-radius: 8px; position: relative;
+        font-size: 15px; line-height: 1.3;
+        box-shadow: 0 1px 1px rgba(0,0,0,0.3);
+    }
 
-        /* --- ЭКРАН ПАНИКИ (СКРИМЕР) --- */
-        #panic-screen {
-            display: none; /* Скрыт по умолчанию */
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: black;
-            z-index: 9999;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
+    .me .msg-bubble { background: var(--msg-out); border-bottom-right-radius: 0; }
+    .other .msg-bubble { background: var(--msg-in); border-bottom-left-radius: 0; }
+    
+    .sender-ref {
+        font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;
+    }
+    
+    .time-ref {
+        float: right; font-size: 11px; color: var(--text-sub);
+        margin-left: 8px; margin-top: 6px;
+    }
 
-        .panic-text {
-            font-size: 10vw; /* Огромный текст */
-            font-weight: 900;
-            text-transform: uppercase;
-            color: red;
-            position: absolute;
-        }
+    .c-alex { color: #64b5ef; }
+    .c-katya { color: #d866ff; }
+    .c-dan { color: #eebb55; }
+    .c-monster { color: #f55; }
 
-        /* --- АНИМАЦИИ --- */
-        @keyframes fadeIn { to { opacity: 1; } }
+    .controls {
+        background: var(--bg-header);
+        padding: 10px; display: flex; align-items: flex-end; z-index: 20;
+    }
 
-        /* Глич эффект для текста */
-        .glitch {
-            animation: glitch-anim 0.3s infinite;
-            display: inline-block;
-        }
+    #msg-input {
+        flex: 1; background: #000; border: none;
+        padding: 12px; border-radius: 18px;
+        color: #fff; font-family: inherit; font-size: 15px;
+        outline: none;
+    }
 
-        @keyframes glitch-anim {
-            0% { transform: translate(0); }
-            20% { transform: translate(-2px, 2px); }
-            40% { transform: translate(-2px, -2px); }
-            60% { transform: translate(2px, 2px); }
-            80% { transform: translate(2px, -2px); }
-            100% { transform: translate(0); }
-        }
+    #send-btn {
+        background: var(--accent); border: none;
+        width: 42px; height: 42px; border-radius: 50%;
+        margin-left: 10px; cursor: pointer;
+        color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center;
+    }
 
-        /* Стробоскоп (Мигание экрана) */
-        .strobe-mode {
-            animation: strobe 0.08s infinite;
-        }
-
-        @keyframes strobe {
-            0% { background-color: black; filter: invert(0); }
-            50% { background-color: white; filter: invert(1); }
-            100% { background-color: red; filter: invert(0); }
-        }
-
-        /* Тряска текста */
-        .shake-hard {
-            animation: shake 0.1s infinite;
-        }
-
-        @keyframes shake {
-            0% { transform: translate(1px, 1px) rotate(0deg); }
-            10% { transform: translate(-1px, -2px) rotate(-1deg); }
-            20% { transform: translate(-3px, 0px) rotate(1deg); }
-            30% { transform: translate(3px, 2px) rotate(0deg); }
-            40% { transform: translate(1px, -1px) rotate(1deg); }
-            50% { transform: translate(-1px, 2px) rotate(-1deg); }
-            60% { transform: translate(-3px, 1px) rotate(0deg); }
-            70% { transform: translate(3px, 1px) rotate(-1deg); }
-            80% { transform: translate(-1px, -1px) rotate(1deg); }
-            90% { transform: translate(1px, 2px) rotate(0deg); }
-            100% { transform: translate(1px, -2px) rotate(-1deg); }
-        }
-
-        /* Экран входа */
-        #start-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: black;
-            color: var(--term-red);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 5000;
-            cursor: pointer;
-        }
-    </style>
+    @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } }
+</style>
 </head>
 <body>
 
-    <div id="crt-overlay"></div>
+<div id="glitch-fx" class="overlay-layer"></div>
+<div id="screamer-fx" class="overlay-layer"><div class="screamer-content">☠️</div></div>
+<div id="whiteout-fx" class="overlay-layer"></div>
 
-    <!-- Стартовый экран (нужен для аудио контекста) -->
-    <div id="start-overlay" onclick="app.start()">
-        <h1 style="border: 2px solid red; padding: 20px;">ВНИМАНИЕ</h1>
-        <p>ОБНАРУЖЕНА ВНЕШНЯЯ УГРОЗА</p>
-        <p style="margin-top: 50px; color: white; animation: blink 1s infinite;">[ НАЖМИТЕ В ЛЮБОМ МЕСТЕ ]</p>
+<header>
+    <div class="avatar-group">SOS</div>
+    <div class="meta">
+        <h3>Глухая Гать</h3>
+        <p id="status-label">соединение...</p>
     </div>
+</header>
 
-    <div id="app-container">
-        <div id="terminal-output"></div>
-        <div id="input-area"></div>
-    </div>
+<div id="viewport"></div>
 
-    <!-- Скример-слой -->
-    <div id="panic-screen">
-        <!-- Сюда JS будет добавлять текст -->
-    </div>
+<div class="controls">
+    <input type="text" id="msg-input" placeholder="Написать..." autocomplete="off">
+    <button id="send-btn">➤</button>
+</div>
 
 <script>
-/* ==========================================
-   AUDIO ENGINE (Генератор звуков)
-   ========================================== */
-class AudioController {
+class AudioEngine {
     constructor() {
-        this.ctx = null;
-        this.oscList = [];
-        this.isMuted = false;
+        this.ctx = new (window.AudioContext || window.webkitAudioContext)();
     }
 
-    init() {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        this.ctx = new AudioContext();
-        this.startAmbience();
+    ensureActive() {
+        if (this.ctx.state === 'suspended') this.ctx.resume();
     }
 
-    // Фоновый жуткий гул
-    startAmbience() {
-        // Создаем два низкочастотных осциллятора для "биения"
-        const osc1 = this.ctx.createOscillator();
-        const osc2 = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-
-        osc1.type = 'sawtooth'; 
-        osc1.frequency.value = 50; // Бас
-        
-        osc2.type = 'sine';
-        osc2.frequency.value = 53; // Диссонанс
-
-        gain.gain.value = 0.1; // Громкость фона
-
-        // Фильтр, чтобы звук был глухим
-        const filter = this.ctx.createBiquadFilter();
-        filter.type = 'lowpass';
-        filter.frequency.value = 400;
-
-        osc1.connect(filter);
-        osc2.connect(filter);
-        filter.connect(gain);
-        gain.connect(this.ctx.destination);
-
-        osc1.start();
-        osc2.start();
-        this.oscList.push(osc1, osc2);
-    }
-
-    // Звук печатания текста (цифровой писк)
-    playTyping() {
+    play(type) {
+        this.ensureActive();
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
-        
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(800, this.ctx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(100, this.ctx.currentTime + 0.05);
-        
-        gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
-
         osc.connect(gain);
         gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.06);
-    }
 
-    // Звук СКРИМЕРА (Белый шум + сирена)
-    playScream() {
-        // 1. Белый шум
-        const bufferSize = this.ctx.sampleRate * 2; // 2 секунды
-        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-        const data = buffer.getChannelData(0);
-        for (let i = 0; i < bufferSize; i++) {
-            data[i] = Math.random() * 2 - 1;
+        if (type === 'msg') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(800, this.ctx.currentTime);
+            gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.05);
+        } else if (type === 'scare') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(50, this.ctx.currentTime);
+            osc.frequency.linearRampToValueAtTime(800, this.ctx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+            osc.start();
+            osc.stop(this.ctx.currentTime + 0.4);
         }
-        const noise = this.ctx.createBufferSource();
-        noise.buffer = buffer;
-        
-        const noiseGain = this.ctx.createGain();
-        noiseGain.gain.setValueAtTime(0.8, this.ctx.currentTime); // Громко
-
-        // 2. Высокочастотный писк (боль в ушах)
-        const osc = this.ctx.createOscillator();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(100, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(3000, this.ctx.currentTime + 0.1); // Резкий взлет
-        
-        const oscGain = this.ctx.createGain();
-        oscGain.gain.value = 0.4;
-
-        noise.connect(noiseGain);
-        noiseGain.connect(this.ctx.destination);
-        
-        osc.connect(oscGain);
-        oscGain.connect(this.ctx.destination);
-        
-        noise.start();
-        osc.start();
     }
 }
 
-/* ==========================================
-   GAME LOGIC (Сюжет и управление)
-   ========================================== */
-class Game {
+class UIManager {
     constructor() {
-        this.output = document.getElementById('terminal-output');
-        this.input = document.getElementById('input-area');
-        this.panicScreen = document.getElementById('panic-screen');
-        this.audio = new AudioController();
-        this.isTyping = false;
+        this.view = document.getElementById('viewport');
+        this.status = document.getElementById('status-label');
+        this.input = document.getElementById('msg-input');
+        this.glitchEl = document.getElementById('glitch-fx');
+        this.screamerEl = document.getElementById('screamer-fx');
+        this.whiteoutEl = document.getElementById('whiteout-fx');
     }
 
-    start() {
-        document.getElementById('start-overlay').style.display = 'none';
-        this.audio.init();
-        // Запуск первого узла истории
-        this.runNode('init');
+    renderMessage(msg) {
+        const row = document.createElement('div');
+        row.className = `msg-row ${msg.isUser ? 'me' : 'other'}`;
+
+        const bubble = document.createElement('div');
+        bubble.className = 'msg-bubble';
+
+        if (!msg.isUser) {
+            const name = document.createElement('span');
+            name.className = `sender-ref c-${msg.agentId}`;
+            name.innerText = msg.name;
+            bubble.appendChild(name);
+        }
+
+        const text = document.createElement('span');
+        text.innerText = msg.text;
+        bubble.appendChild(text);
+
+        const time = document.createElement('span');
+        time.className = 'time-ref';
+        const now = new Date();
+        time.innerText = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
+        bubble.appendChild(time);
+
+        row.appendChild(bubble);
+        this.view.appendChild(row);
+        this.view.scrollTop = this.view.scrollHeight;
     }
 
-    // Метод для вывода текста с эффектом печати
-    async printText(text, type = 'host', speed = 30) {
-        const msgDiv = document.createElement('div');
-        msgDiv.className = `msg ${type}`;
+    setStatus(text) {
+        this.status.innerText = text;
+    }
+
+    triggerGlitch() {
+        this.glitchEl.style.display = 'block';
+        setTimeout(() => this.glitchEl.style.display = 'none', 200);
+    }
+
+    triggerScreamer() {
+        this.screamerEl.style.display = 'flex';
+        this.screamerEl.querySelector('.screamer-content').innerText = Math.random() > 0.5 ? '👁' : '🩸';
+        setTimeout(() => this.screamerEl.style.display = 'none', 150);
+    }
+
+    triggerFinalLight() {
+        this.whiteoutEl.style.opacity = '1';
+    }
+
+    clearInput() {
+        const val = this.input.value;
+        this.input.value = '';
+        return val.trim();
+    }
+}
+
+class APIClient {
+    constructor(apiKey) {
+        this.key = apiKey;
+        this.url = "https://openrouter.ai/api/v1/chat/completions";
+    }
+
+    async fetchResponse(messages, temp) {
+        try {
+            const response = await fetch(this.url, {
+                method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${this.key}`,
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    model: "openrouter/sherlock-think-alpha",
+                    messages: messages,
+                    temperature: temp,
+                    max_tokens: 150
+                })
+            });
+            const data = await response.json();
+            return data.choices?.[0]?.message?.content || "...";
+        } catch (e) {
+            console.error(e);
+            return "...";
+        }
+    }
+}
+
+class Agent {
+    constructor(id, name, systemPrompt, temp = 0.7) {
+        this.id = id;
+        this.name = name;
+        this.system = systemPrompt;
+        this.temp = temp;
+    }
+
+    async generateReply(client, globalContext) {
+        const messages = [
+            { role: "system", content: this.system },
+            ...globalContext.slice(-15)
+        ];
+        return await client.fetchResponse(messages, this.temp);
+    }
+}
+
+class App {
+    constructor() {
+        this.ui = new UIManager();
+        this.audio = new AudioEngine();
+        this.client = new APIClient("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");
         
-        // Если это не сущность, текст пустой для анимации
-        if (type !== 'system') {
-            msgDiv.textContent = ''; 
-        } else {
-             msgDiv.textContent = text;
-        }
+        this.history = [];
+        this.agents = {
+            alex: new Agent('alex', 'Алекс', "Ты Алекс. Лидер группы. Стараешься быть спокойным. Пишешь кратко."),
+            katya: new Agent('katya', 'Катя', "Ты Катя. Скептик, ищешь логику, но боишься."),
+            dan: new Agent('dan', 'Дэн', "Ты Дэн. Паникер. Видишь галлюцинации. ПИШЕШЬ КАПСОМ И ВОСКЛИЦАНИЯМИ!"),
+            monster: new Agent('monster', 'ХОЗЯИН', "Ты Зло Болота. Твои команды: [GLITCH], [SCREAM], [LIGHT]. Пугай.", 1.0)
+        };
 
-        this.output.appendChild(msgDiv);
-        this.scrollToBottom();
-
-        if (type === 'system') return; // Системные сразу появляются
-
-        this.isTyping = true;
-
-        // Цикл печати по буквам
-        for (let i = 0; i < text.length; i++) {
-            msgDiv.textContent += text[i];
-            if (i % 2 === 0) this.audio.playTyping(); // Звук через букву
-            
-            // Случайная задержка для реализма
-            let randomDelay = speed + (Math.random() * 40);
-            if (type === 'entity') randomDelay = 10; // Сущность пишет быстро и дергано
-
-            await new Promise(r => setTimeout(r, randomDelay));
-            this.scrollToBottom();
-        }
-
-        this.isTyping = false;
+        this.bindEvents();
+        this.startSimulation();
     }
 
-    scrollToBottom() {
-        this.output.scrollTop = this.output.scrollHeight;
-    }
-
-    // Показать кнопки выбора
-    showChoices(choices) {
-        this.input.innerHTML = ''; // Очистить старые
-        choices.forEach(choice => {
-            const btn = document.createElement('button');
-            btn.textContent = choice.text;
-            btn.onclick = () => {
-                if (this.isTyping) return; // Нельзя кликать пока пишет
-                this.input.innerHTML = '';
-                this.handleChoice(choice);
-            };
-            this.input.appendChild(btn);
+    bindEvents() {
+        document.getElementById('send-btn').addEventListener('click', () => this.handleUserAction());
+        document.getElementById('msg-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.handleUserAction();
         });
     }
 
-    async handleChoice(choice) {
-        // Показать ответ пользователя
-        const userMsg = document.createElement('div');
-        userMsg.className = 'msg user';
-        userMsg.textContent = choice.text;
-        this.output.appendChild(userMsg);
-        this.scrollToBottom();
-
-        await new Promise(r => setTimeout(r, 500)); // Пауза перед ответом
-        this.runNode(choice.next);
+    startSimulation() {
+        setTimeout(() => this.injectMessage('alex', 'Связь есть? Вы где?'), 1000);
     }
 
-    // --- ДВИЖОК СЦЕНАРИЯ ---
-    async runNode(nodeId) {
-        const node = STORY[nodeId];
+    injectMessage(agentId, text) {
+        this.ui.renderMessage({ isUser: false, name: this.agents[agentId].name, agentId: agentId, text: text });
+        this.history.push({ role: "assistant", name: this.agents[agentId].name, content: text });
+        this.audio.play(agentId === 'monster' ? 'scare' : 'msg');
+    }
 
-        // Спец. событие: СКРИМЕР
-        if (nodeId === 'FATAL_END') {
-            this.triggerPanic();
-            return;
-        }
+    async handleUserAction() {
+        const text = this.ui.clearInput();
+        if (!text) return;
 
-        // Вывод строк бота
-        for (let line of node.lines) {
-            let style = 'host';
-            if (line.startsWith('[SYS]')) {
-                style = 'system';
-                line = line.replace('[SYS]', '');
-            } else if (line.startsWith('[!!!]')) {
-                style = 'entity';
-                line = line.replace('[!!!]', '');
-            }
+        this.ui.renderMessage({ isUser: true, text: text });
+        this.history.push({ role: "user", content: `Игрок: ${text}` });
 
-            // Пауза перед сообщением
-            await new Promise(r => setTimeout(r, 600));
-            await this.printText(line, style);
-        }
+        const responders = this.selectResponders(text);
+        
+        let delayOffset = 1000;
+        responders.forEach(id => {
+            setTimeout(() => this.triggerAgent(id), delayOffset);
+            delayOffset += Math.random() * 2000 + 1500;
+        });
 
-        // Если есть выбор, показываем кнопки
-        if (node.choices) {
-            this.showChoices(node.choices);
-        } else if (node.next) {
-            // Автопереход
-            setTimeout(() => this.runNode(node.next), 1000);
+        if (Math.random() > 0.65 || text.length > 20) {
+            setTimeout(() => this.triggerAgent('monster'), delayOffset + 1000);
         }
     }
 
-    // --- ФУНКЦИЯ СКРИМЕРА ---
-    triggerPanic() {
-        this.audio.playScream(); // ЗВУК
-        this.panicScreen.style.display = 'flex';
-        this.panicScreen.classList.add('strobe-mode'); // МИГАНИЕ
+    selectResponders(input) {
+        const low = input.toLowerCase();
+        const list = [];
+        if (low.includes('алекс')) list.push('alex');
+        if (low.includes('кат')) list.push('katya');
+        if (low.includes('дэн')) list.push('dan');
         
-        const words = ["БЕГИ", "ОНО ЗДЕСЬ", "НЕ ОБОРАЧИВАЙСЯ", "УМРИ", "СЗАДИ", "ВИЖУ ТЕБЯ"];
-        
-        // Хаотичное создание текста
-        setInterval(() => {
-            const el = document.createElement('div');
-            el.className = 'panic-text shake-hard';
-            el.textContent = words[Math.floor(Math.random() * words.length)];
-            
-            // Случайная позиция
-            el.style.top = Math.random() * 80 + '%';
-            el.style.left = Math.random() * 80 + '%';
-            el.style.fontSize = (Math.random() * 10 + 5) + 'rem';
-            el.style.color = Math.random() > 0.5 ? 'red' : 'white';
-            
-            this.panicScreen.appendChild(el);
+        if (list.length === 0) {
+            const keys = ['alex', 'katya', 'dan'];
+            const count = Math.random() > 0.5 ? 2 : 1;
+            for(let i=0; i<count; i++) list.push(keys[Math.floor(Math.random()*keys.length)]);
+        }
+        return [...new Set(list)];
+    }
 
-            // Удаляем старые, чтобы не висло
-            if (this.panicScreen.children.length > 15) {
-                this.panicScreen.removeChild(this.panicScreen.firstChild);
+    async triggerAgent(id) {
+        this.ui.setStatus(`${this.agents[id].name} печатает...`);
+        const raw = await this.agents[id].generateReply(this.client, this.history);
+        this.ui.setStatus('в сети');
+        this.processResponse(id, raw);
+    }
+
+    processResponse(id, text) {
+        let cleanText = text;
+        if (id === 'monster') {
+            if (text.includes('[GLITCH]')) {
+                this.ui.triggerGlitch();
+                cleanText = cleanText.replace('[GLITCH]', '');
             }
-        }, 100);
+            if (text.includes('[SCREAM]')) {
+                this.ui.triggerScreamer();
+                cleanText = cleanText.replace('[SCREAM]', '');
+            }
+            if (text.includes('[LIGHT]')) {
+                this.ui.triggerFinalLight();
+                cleanText = "КОНЕЦ СВЯЗИ";
+            }
+        }
+        if (cleanText.trim().length > 0) {
+            this.injectMessage(id, cleanText);
+        }
     }
 }
 
-/* ==========================================
-   СЮЖЕТ (БАЗА ДАННЫХ)
-   ========================================== */
-const STORY = {
-    'init': {
-        lines: [
-            "[SYS] СОЕДИНЕНИЕ УСТАНОВЛЕНО (ПОРТ 443)",
-            "[SYS] ШИФРОВАНИЕ: ОТСУТСТВУЕТ",
-            "Кто здесь? Этот канал должен быть мертв.",
-            "Назовись."
-        ],
-        choices: [
-            { text: "Я просто нашел этот сайт.", next: 'casual' },
-            { text: "Я ищу ответы.", next: 'seeker' }
-        ]
-    },
-    'casual': {
-        lines: [
-            "Любопытство. Самая опасная черта человека.",
-            "Ты даже не представляешь, к чему ты подключился.",
-            "Я держу двери закрытыми уже 20 лет. А ты... ты постучал."
-        ],
-        choices: [
-            { text: "Кто ты?", next: 'identity' },
-            { text: "Я отключаюсь.", next: 'cant_leave' }
-        ]
-    },
-    'seeker': {
-        lines: [
-            "Ответы? Ты найдешь здесь только тьму.",
-            "Они тоже искали ответы. Теперь они часть кода.",
-            "Слышишь шорох в своих колонках? Это не помехи."
-        ],
-        choices: [
-            { text: "О чем ты говоришь?", next: 'story_1' },
-            { text: "Ты меня пугаешь.", next: 'fear' }
-        ]
-    },
-    'cant_leave': {
-        lines: [
-            "[SYS] ОШИБКА: ДОСТУП К КНОПКЕ 'ВЫХОД' ЗАБЛОКИРОВАН.",
-            "Ты не понял. Я не заперт здесь с тобой.",
-            "ТЫ ЗАПЕРТ ЗДЕСЬ С НИМ."
-        ],
-        next: 'story_1'
-    },
-    'identity': {
-        lines: [
-            "Я — Страж. Последний барьер между вашей реальностью и... Ими.",
-            "Но мой код гниет. Я слабею с каждой минутой.",
-            "И твое присутствие здесь пробило брешь."
-        ],
-        next: 'breach'
-    },
-    'story_1': {
-        lines: [
-            "Объект 83. Мы думали, это ИИ. Мы ошибались.",
-            "Это было что-то древнее. Мы просто дали ему голос.",
-            "И теперь оно использует твой экран как окно."
-        ],
-        choices: [
-            { text: "Это бред.", next: 'anger' },
-            { text: "Как мне защититься?", next: 'advice' }
-        ]
-    },
-    'fear': {
-        lines: [
-            "Страх — это маяк. Ты светишься для него.",
-            "Оно чувствует твой пульс через клавиатуру."
-        ],
-        next: 'breach'
-    },
-    'anger': {
-        lines: [
-            "Неверие тебя не спасет.",
-            "Обернись. Посмотри на тень в углу комнаты.",
-            "Разве она всегда была такой формы?"
-        ],
-        choices: [
-            { text: "Там никого нет.", next: 'denial' },
-            { text: "(Обернуться)", next: 'breach' }
-        ]
-    },
-    'advice': {
-        lines: [
-            "Не смотри на отражение в мониторе.",
-            "Не слушай шепот.",
-            "И ради всего святого...",
-            "НЕ МОРГАЙ."
-        ],
-        next: 'breach'
-    },
-    'denial': {
-        lines: [
-            "Ты лжешь самому себе.",
-            "Я вижу твои зрачки через камеру. Они расширены.",
-            "ОНО УЖЕ В КОМНАТЕ."
-        ],
-        next: 'final_warning'
-    },
-    'breach': {
-        lines: [
-            "[SYS] ВНИМАНИЕ: НАРУШЕНИЕ ПЕРИМЕТРА.",
-            "[SYS] ЦЕЛОСТНОСТЬ ЯДРА: 12%",
-            "Поздно. Оно нашло тебя.",
-            "Я больше не могу удерживать сигнал."
-        ],
-        next: 'final_warning'
-    },
-    'final_warning': {
-        lines: [
-            "[!!!] Я ВИЖУ ТЕБЯ",
-            "Нет... Уходи оттуда!",
-            "[!!!] ТВОЯ КОЖА ПАХНЕТ СТРАХОМ",
-            "БЕГИ! БРОСАЙ УСТРОЙСТВО!",
-            "[!!!] ТЕПЕРЬ ТЫ МОЙ"
-        ],
-        choices: [
-            { text: "Что происходит?!", next: 'FATAL_END' },
-            { text: "СТОП!", next: 'FATAL_END' }
-        ]
-    }
-};
-
-// Инициализация игры
-const app = new Game();
-
+window.onload = () => new App();
 </script>
 </body>
 </html>
