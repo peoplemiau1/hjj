@@ -3,410 +3,430 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>DeadChannel_v2</title>
+<meta name="theme-color" content="#000000">
+<title>ECHO_FOREST_UI_UPDATE</title>
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+
     :root {
-        --bg-primary: #0e1621;
-        --bg-header: #17212b;
-        --msg-in: #182533;
-        --msg-out: #2b5278;
-        --text-main: #f5f5f5;
-        --text-sub: #6c7883;
-        --accent: #64b5ef;
-        --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        --bg-color: #000000;
+        --header-bg: #1f1f1f;
+        --bubble-in: #2b2b2b;
+        --bubble-out: #3e70dd;
+        --text-color: #ffffff;
+        --text-sec: #8e8e8e;
+        --input-bg: #1f1f1f;
+        --accent: #3e70dd;
+        --danger: #ff3b30;
     }
 
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
 
     body {
-        background-color: var(--bg-primary);
-        color: var(--text-main);
-        font-family: var(--font);
+        background-color: var(--bg-color);
+        color: var(--text-color);
+        font-family: 'Roboto', sans-serif;
         height: 100vh;
+        height: 100dvh;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        cursor: default;
     }
-
-    .overlay-layer {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100;
-        display: none;
-    }
-
-    #glitch-fx {
-        background: rgba(255, 0, 0, 0.1);
-        mix-blend-mode: exclusion;
-    }
-
-    #whiteout-fx {
-        background: #fff;
-        z-index: 200;
-        opacity: 0;
-        transition: opacity 4s ease-in;
-        display: block;
-        pointer-events: none;
-    }
-
-    #screamer-fx {
-        background: #000;
-        z-index: 150;
-        display: none;
-        align-items: center; justify-content: center;
-    }
-    
-    .screamer-content { font-size: 8rem; animation: shake 0.1s infinite; }
 
     header {
-        background: var(--bg-header);
-        padding: 10px 15px;
+        flex: 0 0 56px;
+        background: var(--header-bg);
         display: flex;
         align-items: center;
+        padding: 0 12px;
+        color: #fff;
+        box-shadow: 0 1px 0 rgba(255,255,255,0.05);
         z-index: 10;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
 
-    .avatar-group {
-        width: 42px; height: 42px;
-        background: linear-gradient(135deg, #444, #222);
+    .icon-btn {
+        width: 40px; height: 40px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        border-radius: 50%;
+    }
+    .icon-btn:active { background: rgba(255,255,255,0.1); }
+    
+    .icon-svg { width: 24px; height: 24px; fill: #b0b0b0; }
+
+    .header-content {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        margin-left: 4px;
+        overflow: hidden;
+    }
+
+    .header-avatar {
+        width: 32px; height: 32px;
+        background: #333;
         border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
-        font-weight: 700; margin-right: 12px;
-        position: relative;
+        font-weight: bold; font-size: 14px;
+        margin-right: 10px;
+        color: #ccc;
     }
 
-    .avatar-group::after {
-        content: ''; position: absolute; bottom: 0; right: 0;
-        width: 10px; height: 10px; background: #f55;
-        border: 2px solid var(--bg-header); border-radius: 50%;
-    }
-
-    .meta h3 { font-size: 16px; font-weight: 600; }
-    .meta p { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
+    .header-text h1 { font-size: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .header-text span { font-size: 12px; color: #888; display: block; }
 
     #viewport {
         flex: 1;
         overflow-y: auto;
-        padding: 15px;
-        background: url('https://web.telegram.org/img/bg_0.png');
-        background-blend-mode: multiply;
-        background-color: var(--bg-primary);
-        display: flex; flex-direction: column; gap: 6px;
+        padding: 16px 12px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        background: #000;
     }
 
-    .msg-row { display: flex; width: 100%; animation: fade 0.2s ease; }
+    .msg-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 8px;
+        max-width: 100%;
+        animation: fadeIn 0.2s ease-out;
+    }
+
     .msg-row.me { justify-content: flex-end; }
+    .msg-row.other { justify-content: flex-start; }
+
+    .msg-avatar {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 14px; font-weight: 600; color: #fff;
+        flex-shrink: 0;
+    }
+
+    .msg-row.me .msg-avatar { order: 2; background: var(--accent); }
+    .msg-row.other .msg-avatar { order: 1; background: #444; }
+
+    .bubble {
+        padding: 10px 14px;
+        border-radius: 18px;
+        font-size: 15px;
+        line-height: 1.4;
+        max-width: 75%;
+        position: relative;
+        word-wrap: break-word;
+    }
+
+    .msg-row.me .bubble {
+        order: 1;
+        background: var(--bubble-out);
+        color: #fff;
+        border-bottom-right-radius: 4px;
+    }
+
+    .msg-row.other .bubble {
+        order: 2;
+        background: var(--bubble-in);
+        color: #ddd;
+        border-bottom-left-radius: 4px;
+    }
     
-    .msg-bubble {
-        max-width: 75%; padding: 6px 10px;
-        border-radius: 8px; position: relative;
-        font-size: 15px; line-height: 1.3;
-        box-shadow: 0 1px 1px rgba(0,0,0,0.3);
+    .msg-row.monster .bubble {
+        border: 1px solid var(--danger);
+        color: #ffcccc;
+        background: #1a0505;
     }
 
-    .me .msg-bubble { background: var(--msg-out); border-bottom-right-radius: 0; }
-    .other .msg-bubble { background: var(--msg-in); border-bottom-left-radius: 0; }
+    .input-area {
+        flex: 0 0 auto;
+        padding: 8px 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #000;
+    }
+
+    .plus-btn {
+        color: #b0b0b0;
+        font-size: 28px;
+        font-weight: 300;
+        cursor: pointer;
+        padding: 0 4px;
+    }
+
+    .input-wrapper {
+        flex: 1;
+        background: var(--input-bg);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        padding: 0 16px;
+        min-height: 44px;
+    }
+
+    input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 16px;
+        padding: 10px 0;
+    }
     
-    .sender-ref {
-        font-size: 12px; font-weight: 600; display: block; margin-bottom: 4px;
-    }
-    
-    .time-ref {
-        float: right; font-size: 11px; color: var(--text-sub);
-        margin-left: 8px; margin-top: 6px;
-    }
-
-    .c-alex { color: #64b5ef; }
-    .c-katya { color: #d866ff; }
-    .c-dan { color: #eebb55; }
-    .c-monster { color: #f55; }
-
-    .controls {
-        background: var(--bg-header);
-        padding: 10px; display: flex; align-items: flex-end; z-index: 20;
-    }
-
-    #msg-input {
-        flex: 1; background: #000; border: none;
-        padding: 12px; border-radius: 18px;
-        color: #fff; font-family: inherit; font-size: 15px;
-        outline: none;
-    }
+    input::placeholder { color: #666; }
 
     #send-btn {
-        background: var(--accent); border: none;
-        width: 42px; height: 42px; border-radius: 50%;
-        margin-left: 10px; cursor: pointer;
-        color: #fff; font-size: 18px; display: flex; align-items: center; justify-content: center;
+        display: none; 
     }
 
-    @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes shake { 0% { transform: translate(1px, 1px); } 50% { transform: translate(-1px, -1px); } 100% { transform: translate(1px, -1px); } }
+    /* FX LAYERS */
+    .fx-layer { position: fixed; inset: 0; pointer-events: none; z-index: 100; display: none; }
+    #fx-glitch { background: rgba(255, 0, 0, 0.1); mix-blend-mode: difference; }
+    #fx-face { background: #000; align-items: center; justify-content: center; z-index: 200; }
+    .face-txt { font-size: 80px; filter: invert(1); animation: shake 0.05s infinite; }
+    #fx-light { background: #fff; transition: opacity 2s; opacity: 0; z-index: 300; pointer-events: none; display: block; }
+
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes shake { 0% { transform: translate(1px,1px); } 50% { transform: translate(-1px,-1px); } 100% { transform: translate(-1px,1px); } }
 </style>
 </head>
 <body>
 
-<div id="glitch-fx" class="overlay-layer"></div>
-<div id="screamer-fx" class="overlay-layer"><div class="screamer-content">☠️</div></div>
-<div id="whiteout-fx" class="overlay-layer"></div>
+<div id="fx-glitch" class="fx-layer"></div>
+<div id="fx-face" class="fx-layer" style="display:none; flex-direction:column"><div class="face-txt">☠</div></div>
+<div id="fx-light" class="fx-layer"></div>
 
 <header>
-    <div class="avatar-group">SOS</div>
-    <div class="meta">
-        <h3>Глухая Гать</h3>
-        <p id="status-label">соединение...</p>
+    <div class="icon-btn">
+        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    </div>
+    <div class="header-content">
+        <div class="header-avatar">Г</div>
+        <div class="header-text">
+            <h1>Глухая Гать</h1>
+            <p id="status">4 участника</p>
+        </div>
+    </div>
+    <div class="icon-btn">
+        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+    </div>
+    <div class="icon-btn">
+        <svg class="icon-svg" viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
     </div>
 </header>
 
 <div id="viewport"></div>
 
-<div class="controls">
-    <input type="text" id="msg-input" placeholder="Написать..." autocomplete="off">
-    <button id="send-btn">➤</button>
+<div class="input-area">
+    <div class="plus-btn">+</div>
+    <div class="input-wrapper">
+        <input type="text" id="msg-input" placeholder="Напишите сообщение..." autocomplete="off">
+    </div>
 </div>
 
 <script>
 class AudioEngine {
     constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+        this.master = this.ctx.createGain();
+        this.master.connect(this.ctx.destination);
     }
 
-    ensureActive() {
-        if (this.ctx.state === 'suspended') this.ctx.resume();
+    resume() { if (this.ctx.state === 'suspended') this.ctx.resume(); }
+
+    playTone(f, t, d) {
+        this.resume();
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.frequency.value = f; o.type = t;
+        g.gain.setValueAtTime(0.05, this.ctx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + d);
+        o.connect(g); g.connect(this.master);
+        o.start(); o.stop(this.ctx.currentTime + d);
     }
 
-    play(type) {
-        this.ensureActive();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
-        osc.connect(gain);
-        gain.connect(this.ctx.destination);
+    playPop() { this.playTone(600, 'sine', 0.1); }
+    
+    playScream() {
+        this.resume();
+        const t = this.ctx.currentTime;
+        const o = this.ctx.createOscillator();
+        o.type = 'sawtooth';
+        o.frequency.setValueAtTime(200, t);
+        o.frequency.linearRampToValueAtTime(1000, t+0.2);
+        const g = this.ctx.createGain();
+        g.gain.setValueAtTime(0.5, t);
+        g.gain.exponentialRampToValueAtTime(0.01, t+0.5);
+        o.connect(g); g.connect(this.master);
+        o.start(); o.stop(t+0.5);
+    }
 
-        if (type === 'msg') {
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(800, this.ctx.currentTime);
-            gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
-            osc.start();
-            osc.stop(this.ctx.currentTime + 0.05);
-        } else if (type === 'scare') {
-            osc.type = 'sawtooth';
-            osc.frequency.setValueAtTime(50, this.ctx.currentTime);
-            osc.frequency.linearRampToValueAtTime(800, this.ctx.currentTime + 0.2);
-            gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
-            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
-            osc.start();
-            osc.stop(this.ctx.currentTime + 0.4);
-        }
+    playGlitch() {
+        this.resume();
+        const t = this.ctx.currentTime;
+        const o = this.ctx.createOscillator();
+        o.type = 'square';
+        o.frequency.setValueAtTime(100, t);
+        o.frequency.linearRampToValueAtTime(50, t+0.1);
+        const g = this.ctx.createGain();
+        g.gain.setValueAtTime(0.2, t);
+        g.gain.linearRampToValueAtTime(0, t+0.1);
+        o.connect(g); g.connect(this.master);
+        o.start(); o.stop(t+0.1);
     }
 }
 
-class UIManager {
+class UI {
     constructor() {
         this.view = document.getElementById('viewport');
-        this.status = document.getElementById('status-label');
-        this.input = document.getElementById('msg-input');
-        this.glitchEl = document.getElementById('glitch-fx');
-        this.screamerEl = document.getElementById('screamer-fx');
-        this.whiteoutEl = document.getElementById('whiteout-fx');
+        this.inp = document.getElementById('msg-input');
+        this.status = document.getElementById('status');
+        this.fx = {
+            glitch: document.getElementById('fx-glitch'),
+            face: document.getElementById('fx-face'),
+            light: document.getElementById('fx-light')
+        };
     }
 
-    renderMessage(msg) {
+    addMsg(data) {
         const row = document.createElement('div');
-        row.className = `msg-row ${msg.isUser ? 'me' : 'other'}`;
+        row.className = `msg-row ${data.isMe ? 'me' : 'other'}`;
+        if (data.id === 'monster') row.classList.add('monster');
 
-        const bubble = document.createElement('div');
-        bubble.className = 'msg-bubble';
+        const av = document.createElement('div');
+        av.className = 'msg-avatar';
+        av.innerText = data.initial;
+        
+        if (data.id === 'monster') av.style.backgroundColor = '#ff0000';
+        else if (!data.isMe) av.style.backgroundColor = data.color || '#444';
 
-        if (!msg.isUser) {
-            const name = document.createElement('span');
-            name.className = `sender-ref c-${msg.agentId}`;
-            name.innerText = msg.name;
-            bubble.appendChild(name);
-        }
+        const bub = document.createElement('div');
+        bub.className = 'bubble';
+        bub.innerText = data.text;
 
-        const text = document.createElement('span');
-        text.innerText = msg.text;
-        bubble.appendChild(text);
-
-        const time = document.createElement('span');
-        time.className = 'time-ref';
-        const now = new Date();
-        time.innerText = `${now.getHours()}:${now.getMinutes().toString().padStart(2, '0')}`;
-        bubble.appendChild(time);
-
-        row.appendChild(bubble);
+        row.appendChild(av);
+        row.appendChild(bub);
         this.view.appendChild(row);
         this.view.scrollTop = this.view.scrollHeight;
     }
 
-    setStatus(text) {
-        this.status.innerText = text;
+    setTyping(name) {
+        this.status.innerText = `${name} печатает...`;
+        this.status.style.color = '#3e70dd';
     }
 
-    triggerGlitch() {
-        this.glitchEl.style.display = 'block';
-        setTimeout(() => this.glitchEl.style.display = 'none', 200);
+    resetStatus() {
+        this.status.innerText = '4 участника';
+        this.status.style.color = '#888';
     }
 
-    triggerScreamer() {
-        this.screamerEl.style.display = 'flex';
-        this.screamerEl.querySelector('.screamer-content').innerText = Math.random() > 0.5 ? '👁' : '🩸';
-        setTimeout(() => this.screamerEl.style.display = 'none', 150);
+    glitch() {
+        this.fx.glitch.style.display = 'block';
+        setTimeout(()=>this.fx.glitch.style.display='none', 150);
     }
 
-    triggerFinalLight() {
-        this.whiteoutEl.style.opacity = '1';
+    scream() {
+        this.fx.face.style.display = 'flex';
+        this.fx.face.querySelector('.face-txt').innerText = Math.random()>0.5 ? '☠' : '👁';
+        setTimeout(()=>this.fx.face.style.display='none', 200);
     }
 
-    clearInput() {
-        const val = this.input.value;
-        this.input.value = '';
-        return val.trim();
+    light() {
+        this.fx.light.style.opacity = 1;
     }
 }
 
-class APIClient {
-    constructor(apiKey) {
-        this.key = apiKey;
-        this.url = "https://openrouter.ai/api/v1/chat/completions";
+class Net {
+    constructor(k) {
+        this.k = k;
+        this.u = "https://openrouter.ai/api/v1/chat/completions";
     }
-
-    async fetchResponse(messages, temp) {
+    async req(hist, temp) {
         try {
-            const response = await fetch(this.url, {
-                method: "POST",
-                headers: {
-                    "Authorization": `Bearer ${this.key}`,
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    model: "openrouter/sherlock-think-alpha",
-                    messages: messages,
-                    temperature: temp,
-                    max_tokens: 150
-                })
+            const r = await fetch(this.u, {
+                method:"POST",
+                headers:{"Authorization":`Bearer ${this.k}`,"Content-Type":"application/json"},
+                body:JSON.stringify({model:"openrouter/sherlock-think-alpha",messages:hist,temperature:temp,max_tokens:120})
             });
-            const data = await response.json();
-            return data.choices?.[0]?.message?.content || "...";
-        } catch (e) {
-            console.error(e);
-            return "...";
-        }
-    }
-}
-
-class Agent {
-    constructor(id, name, systemPrompt, temp = 0.7) {
-        this.id = id;
-        this.name = name;
-        this.system = systemPrompt;
-        this.temp = temp;
-    }
-
-    async generateReply(client, globalContext) {
-        const messages = [
-            { role: "system", content: this.system },
-            ...globalContext.slice(-15)
-        ];
-        return await client.fetchResponse(messages, this.temp);
+            const d = await r.json();
+            return d.choices[0].message.content;
+        } catch(e) { return null; }
     }
 }
 
 class App {
     constructor() {
-        this.ui = new UIManager();
         this.audio = new AudioEngine();
-        this.client = new APIClient("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");
+        this.ui = new UI();
+        this.net = new Net("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");
+        this.hist = [];
         
-        this.history = [];
         this.agents = {
-            alex: new Agent('alex', 'Алекс', "Ты Алекс. Лидер группы. Стараешься быть спокойным. Пишешь кратко."),
-            katya: new Agent('katya', 'Катя', "Ты Катя. Скептик, ищешь логику, но боишься."),
-            dan: new Agent('dan', 'Дэн', "Ты Дэн. Паникер. Видишь галлюцинации. ПИШЕШЬ КАПСОМ И ВОСКЛИЦАНИЯМИ!"),
-            monster: new Agent('monster', 'ХОЗЯИН', "Ты Зло Болота. Твои команды: [GLITCH], [SCREAM], [LIGHT]. Пугай.", 1.0)
+            alex: { id:'alex', name:'Алекс', initial:'А', color:'#795548', sys:'Ты Алекс. Лидер. Пиши кратко.' },
+            katya: { id:'katya', name:'Катя', initial:'К', color:'#9c27b0', sys:'Ты Катя. Скептик. Боишься.' },
+            dan: { id:'dan', name:'Дэн', initial:'Д', color:'#ff9800', sys:'Ты Дэн. Паникер. КАПС.' },
+            monster: { id:'monster', name:'...', initial:'?', color:'#f44336', sys:'Ты ЗЛО. Команды: [SCREAM], [GLITCH], [LIGHT].', temp:1.0 }
         };
 
-        this.bindEvents();
-        this.startSimulation();
+        this.init();
     }
 
-    bindEvents() {
-        document.getElementById('send-btn').addEventListener('click', () => this.handleUserAction());
-        document.getElementById('msg-input').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') this.handleUserAction();
-        });
+    init() {
+        this.ui.inp.addEventListener('keydown', e => { if(e.key==='Enter') this.send(); });
+        setTimeout(() => this.inject('alex', 'Ну и где мы?'), 1000);
     }
 
-    startSimulation() {
-        setTimeout(() => this.injectMessage('alex', 'Связь есть? Вы где?'), 1000);
+    send() {
+        const t = this.ui.inp.value.trim();
+        if(!t) return;
+        this.ui.inp.value = '';
+        this.audio.playPop();
+        this.ui.addMsg({ isMe:true, text:t, initial:'Я' });
+        this.hist.push({ role:'user', content:`Игрок: ${t}` });
+        this.process(t);
     }
 
-    injectMessage(agentId, text) {
-        this.ui.renderMessage({ isUser: false, name: this.agents[agentId].name, agentId: agentId, text: text });
-        this.history.push({ role: "assistant", name: this.agents[agentId].name, content: text });
-        this.audio.play(agentId === 'monster' ? 'scare' : 'msg');
-    }
-
-    async handleUserAction() {
-        const text = this.ui.clearInput();
-        if (!text) return;
-
-        this.ui.renderMessage({ isUser: true, text: text });
-        this.history.push({ role: "user", content: `Игрок: ${text}` });
-
-        const responders = this.selectResponders(text);
+    process(t) {
+        let lower = t.toLowerCase();
+        let tgts = [];
         
-        let delayOffset = 1000;
-        responders.forEach(id => {
-            setTimeout(() => this.triggerAgent(id), delayOffset);
-            delayOffset += Math.random() * 2000 + 1500;
+        if(lower.includes('алекс')) tgts.push('alex');
+        else if(lower.includes('кат')) tgts.push('katya');
+        else if(lower.includes('дэн')) tgts.push('dan');
+        else {
+            let k = ['alex','katya','dan'];
+            tgts.push(k[Math.floor(Math.random()*3)]);
+        }
+
+        let d = 1000;
+        tgts.forEach(id => {
+            setTimeout(()=>this.trigger(id), d);
+            d += 2000;
         });
 
-        if (Math.random() > 0.65 || text.length > 20) {
-            setTimeout(() => this.triggerAgent('monster'), delayOffset + 1000);
-        }
+        if(Math.random()>0.7 || t.length>20) setTimeout(()=>this.trigger('monster'), d+500);
     }
 
-    selectResponders(input) {
-        const low = input.toLowerCase();
-        const list = [];
-        if (low.includes('алекс')) list.push('alex');
-        if (low.includes('кат')) list.push('katya');
-        if (low.includes('дэн')) list.push('dan');
+    inject(id, txt) {
+        this.ui.addMsg({ isMe:false, id:id, text:txt, initial:this.agents[id].initial, color:this.agents[id].color });
+        this.hist.push({ role:'assistant', name:this.agents[id].name, content:txt });
+        this.audio.playPop();
+    }
+
+    async trigger(id) {
+        this.ui.setTyping(this.agents[id].name);
+        const ctx = [{role:"system", content:this.agents[id].sys+" КОНТЕКСТ: Ночь, болото, хоррор."}, ...this.hist.slice(-10)];
+        const res = await this.net.req(ctx, this.agents[id].temp||0.7);
+        this.ui.resetStatus();
         
-        if (list.length === 0) {
-            const keys = ['alex', 'katya', 'dan'];
-            const count = Math.random() > 0.5 ? 2 : 1;
-            for(let i=0; i<count; i++) list.push(keys[Math.floor(Math.random()*keys.length)]);
-        }
-        return [...new Set(list)];
-    }
-
-    async triggerAgent(id) {
-        this.ui.setStatus(`${this.agents[id].name} печатает...`);
-        const raw = await this.agents[id].generateReply(this.client, this.history);
-        this.ui.setStatus('в сети');
-        this.processResponse(id, raw);
-    }
-
-    processResponse(id, text) {
-        let cleanText = text;
-        if (id === 'monster') {
-            if (text.includes('[GLITCH]')) {
-                this.ui.triggerGlitch();
-                cleanText = cleanText.replace('[GLITCH]', '');
+        if(res) {
+            let clean = res;
+            if(id==='monster') {
+                if(res.includes('[SCREAM]')) { this.ui.scream(); this.audio.playScream(); clean=clean.replace('[SCREAM]',''); }
+                if(res.includes('[GLITCH]')) { this.ui.glitch(); this.audio.playGlitch(); clean=clean.replace('[GLITCH]',''); }
+                if(res.includes('[LIGHT]')) { this.ui.light(); clean="СВЕТ..."; }
             }
-            if (text.includes('[SCREAM]')) {
-                this.ui.triggerScreamer();
-                cleanText = cleanText.replace('[SCREAM]', '');
-            }
-            if (text.includes('[LIGHT]')) {
-                this.ui.triggerFinalLight();
-                cleanText = "КОНЕЦ СВЯЗИ";
-            }
-        }
-        if (cleanText.trim().length > 0) {
-            this.injectMessage(id, cleanText);
+            if(clean.trim()) this.inject(id, clean);
         }
     }
 }
