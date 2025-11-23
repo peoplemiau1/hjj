@@ -7,7 +7,6 @@
 <title>ECHO_FOREST_UI_UPDATE</title>
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
-
     :root {
         --bg-color: #000000;
         --header-bg: #1f1f1f;
@@ -19,9 +18,7 @@
         --accent: #3e70dd;
         --danger: #ff3b30;
     }
-
     * { box-sizing: border-box; margin: 0; padding: 0; outline: none; -webkit-tap-highlight-color: transparent; }
-
     body {
         background-color: var(--bg-color);
         color: var(--text-color);
@@ -32,7 +29,6 @@
         flex-direction: column;
         overflow: hidden;
     }
-
     header {
         flex: 0 0 56px;
         background: var(--header-bg);
@@ -43,7 +39,6 @@
         box-shadow: 0 1px 0 rgba(255,255,255,0.05);
         z-index: 10;
     }
-
     .icon-btn {
         width: 40px; height: 40px;
         display: flex; align-items: center; justify-content: center;
@@ -51,9 +46,7 @@
         border-radius: 50%;
     }
     .icon-btn:active { background: rgba(255,255,255,0.1); }
-    
     .icon-svg { width: 24px; height: 24px; fill: #b0b0b0; }
-
     .header-content {
         flex: 1;
         display: flex;
@@ -61,7 +54,6 @@
         margin-left: 4px;
         overflow: hidden;
     }
-
     .header-avatar {
         width: 32px; height: 32px;
         background: #333;
@@ -71,10 +63,8 @@
         margin-right: 10px;
         color: #ccc;
     }
-
     .header-text h1 { font-size: 16px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .header-text span { font-size: 12px; color: #888; display: block; }
-
     #viewport {
         flex: 1;
         overflow-y: auto;
@@ -84,7 +74,6 @@
         gap: 16px;
         background: #000;
     }
-
     .msg-row {
         display: flex;
         align-items: flex-end;
@@ -92,10 +81,8 @@
         max-width: 100%;
         animation: fadeIn 0.2s ease-out;
     }
-
     .msg-row.me { justify-content: flex-end; }
     .msg-row.other { justify-content: flex-start; }
-
     .msg-avatar {
         width: 32px; height: 32px;
         border-radius: 50%;
@@ -103,10 +90,8 @@
         font-size: 14px; font-weight: 600; color: #fff;
         flex-shrink: 0;
     }
-
     .msg-row.me .msg-avatar { order: 2; background: var(--accent); }
     .msg-row.other .msg-avatar { order: 1; background: #444; }
-
     .bubble {
         padding: 10px 14px;
         border-radius: 18px;
@@ -116,27 +101,23 @@
         position: relative;
         word-wrap: break-word;
     }
-
     .msg-row.me .bubble {
         order: 1;
         background: var(--bubble-out);
         color: #fff;
         border-bottom-right-radius: 4px;
     }
-
     .msg-row.other .bubble {
         order: 2;
         background: var(--bubble-in);
         color: #ddd;
         border-bottom-left-radius: 4px;
     }
-    
     .msg-row.monster .bubble {
         border: 1px solid var(--danger);
         color: #ffcccc;
         background: #1a0505;
     }
-
     .input-area {
         flex: 0 0 auto;
         padding: 8px 12px;
@@ -145,7 +126,6 @@
         gap: 12px;
         background: #000;
     }
-
     .plus-btn {
         color: #b0b0b0;
         font-size: 28px;
@@ -153,7 +133,6 @@
         cursor: pointer;
         padding: 0 4px;
     }
-
     .input-wrapper {
         flex: 1;
         background: var(--input-bg);
@@ -163,7 +142,6 @@
         padding: 0 16px;
         min-height: 44px;
     }
-
     input {
         flex: 1;
         background: transparent;
@@ -172,26 +150,19 @@
         font-size: 16px;
         padding: 10px 0;
     }
-    
     input::placeholder { color: #666; }
-
-    #send-btn {
-        display: none; 
-    }
-
+    #send-btn { display: none; }
     /* FX LAYERS */
     .fx-layer { position: fixed; inset: 0; pointer-events: none; z-index: 100; display: none; }
     #fx-glitch { background: rgba(255, 0, 0, 0.1); mix-blend-mode: difference; }
     #fx-face { background: #000; align-items: center; justify-content: center; z-index: 200; }
     .face-txt { font-size: 80px; filter: invert(1); animation: shake 0.05s infinite; }
     #fx-light { background: #fff; transition: opacity 2s; opacity: 0; z-index: 300; pointer-events: none; display: block; }
-
     @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes shake { 0% { transform: translate(1px,1px); } 50% { transform: translate(-1px,-1px); } 100% { transform: translate(-1px,1px); } }
 </style>
 </head>
 <body>
-
 <div id="fx-glitch" class="fx-layer"></div>
 <div id="fx-face" class="fx-layer" style="display:none; flex-direction:column"><div class="face-txt">☠</div></div>
 <div id="fx-light" class="fx-layer"></div>
@@ -231,9 +202,7 @@ class AudioEngine {
         this.master = this.ctx.createGain();
         this.master.connect(this.ctx.destination);
     }
-
     resume() { if (this.ctx.state === 'suspended') this.ctx.resume(); }
-
     playTone(f, t, d) {
         this.resume();
         const o = this.ctx.createOscillator();
@@ -244,9 +213,7 @@ class AudioEngine {
         o.connect(g); g.connect(this.master);
         o.start(); o.stop(this.ctx.currentTime + d);
     }
-
     playPop() { this.playTone(600, 'sine', 0.1); }
-    
     playScream() {
         this.resume();
         const t = this.ctx.currentTime;
@@ -260,7 +227,6 @@ class AudioEngine {
         o.connect(g); g.connect(this.master);
         o.start(); o.stop(t+0.5);
     }
-
     playGlitch() {
         this.resume();
         const t = this.ctx.currentTime;
@@ -287,7 +253,6 @@ class UI {
             light: document.getElementById('fx-light')
         };
     }
-
     addMsg(data) {
         const row = document.createElement('div');
         row.className = `msg-row ${data.isMe ? 'me' : 'other'}`;
@@ -309,28 +274,23 @@ class UI {
         this.view.appendChild(row);
         this.view.scrollTop = this.view.scrollHeight;
     }
-
     setTyping(name) {
         this.status.innerText = `${name} печатает...`;
         this.status.style.color = '#3e70dd';
     }
-
     resetStatus() {
         this.status.innerText = '4 участника';
         this.status.style.color = '#888';
     }
-
     glitch() {
         this.fx.glitch.style.display = 'block';
         setTimeout(()=>this.fx.glitch.style.display='none', 150);
     }
-
     scream() {
         this.fx.face.style.display = 'flex';
         this.fx.face.querySelector('.face-txt').innerText = Math.random()>0.5 ? '☠' : '👁';
         setTimeout(()=>this.fx.face.style.display='none', 200);
     }
-
     light() {
         this.fx.light.style.opacity = 1;
     }
@@ -346,7 +306,8 @@ class Net {
             const r = await fetch(this.u, {
                 method:"POST",
                 headers:{"Authorization":`Bearer ${this.k}`,"Content-Type":"application/json"},
-                body:JSON.stringify({model:"openrouter/sherlock-think-alpha",messages:hist,temperature:temp,max_tokens:120})
+                // ИЗМЕНЕНО: модель заменена на x-ai/grok-4.1-fast
+                body:JSON.stringify({model:"x-ai/grok-4.1-fast",messages:hist,temperature:temp,max_tokens:120})
             });
             const d = await r.json();
             return d.choices[0].message.content;
@@ -358,6 +319,7 @@ class App {
     constructor() {
         this.audio = new AudioEngine();
         this.ui = new UI();
+        // ВАШ ТЕСТОВЫЙ КЛЮЧ
         this.net = new Net("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");
         this.hist = [];
         
@@ -430,7 +392,6 @@ class App {
         }
     }
 }
-
 window.onload = () => new App();
 </script>
 </body>
